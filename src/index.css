@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #00C100;
+  --color-primary-dark: #00A300;
+  --color-primary-light: #33D433;
+  --color-accent: #DB7B2B;
+  --color-accent-light: #E89B56;
+  --color-geneina-teal: #003D48;
+  --color-geneina-white: #FFFFFF;
+  --color-secondary-blue: #CCE9F2;
+  --color-body-text: #1F3338;
+  --color-bg: #F8FAFB;
+  --color-bg-card: #FFFFFF;
+  --color-border: #DDE4E6;
+  --color-danger: #D32F2F;
+  --color-warning: #E87B00;
+  --color-info: #1976D2;
+
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'DM Sans', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-body-text);
+  background-color: var(--color-bg);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[dir='rtl'] body,
+[dir='rtl'] {
+  font-family: 'Noto Sans Arabic', 'DM Sans', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: #DDE4E6;
+  outline: none;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00C100;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00C100;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+}
+
+input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #DDE4E6;
+}
+
+::selection {
+  background-color: #CCE9F2;
+  color: #003D48;
+}
+
+/* Print styles */
+@media print {
+  @page {
+    size: landscape A4;
+    margin: 1cm;
+  }
+
+  nav, aside, button, .no-print {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  table {
+    font-size: 9px !important;
+  }
+
+  .h-screen {
+    height: auto !important;
+  }
+
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+}
