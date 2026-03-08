@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test:compile": "tsc src/lib/calculations.ts src/lib/colorScale.ts src/lib/constants.ts --module esnext --target es2022 --moduleResolution bundler --skipLibCheck --outDir .test-build",
-    "test": "npm run test:compile && node --test tests/**/*.test.mjs",
+    "test": "npm run test:compile && node --test tests/*.test.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
