@@ -20,6 +20,7 @@
     "tBaseTooltip": "TBase is the starting point of the RTR formula. Below this temperature, the plant ceases to grow. Each crop has a different TBase. You can adjust this to fine-tune your target temperatures.",
     "tBaseRecommended": "Recommended for {{crop}}: {{value}}°C",
     "tBaseReset": "Reset to recommended",
+    "resetAll": "Reset All Settings",
     "crop": "Crop Profile",
     "noCrop": "Custom / No Preset",
     "apply": "Apply to Calculator"
@@ -65,7 +66,10 @@
     "effectiveRtr": "Your Effective RTR",
     "effectiveRtrTooltip": "This is the RTR value that corresponds to your actual temperature and light conditions. Compare it to your crop's recommended RTR — if it's much higher, your greenhouse is too warm for the light available. If it's much lower, you could raise the temperature.",
     "calculatedT24h": "Your 24h Average",
-    "calculatedT24hTooltip": "The 24-hour average temperature calculated from your actual day and night temperatures, weighted by light and dark hours. Compare this to the target from the 'Plan Temperature' mode."
+    "calculatedT24hTooltip": "The 24-hour average temperature calculated from your actual day and night temperatures, weighted by light and dark hours. Compare this to the target from the 'Plan Temperature' mode.",
+    "dliZeroInfo": "DLI = 0 means there is no light for photosynthesis. RTR guidance is not applicable without light input.",
+    "reverseRtrUnavailable": "Effective RTR cannot be calculated when DLI is zero.",
+    "t24hCapWarning": "Calculated T24h exceeds realistic greenhouse conditions (>{{max}}°C). Check your inputs."
   },
   "table": {
     "title": "Temperature Heatmap",
@@ -76,12 +80,21 @@
     "rtrLabel": "RTR",
     "dliLabel": "DLI",
     "cellTooltip": "T24h = {{value}}°C at RTR {{rtr}}, DLI {{dli}}",
+    "cellAria": "Temperature {{value}}{{degrees}} at RTR {{rtr}} and DLI {{dli}}. Zone: {{zone}}.",
     "acceptedLow": "Accepted Low",
     "acceptedHigh": "Accepted High",
     "tBaseLabel": "TBase",
     "modeLabel": "Mode",
     "modePar": "PAR (mol/m²/day)",
-    "modeRadiation": "Radiation (J/cm²/day)"
+    "modeRadiation": "Radiation (J/cm²/day)",
+    "mobileHint": "Mobile view focuses on the highlighted RTR row and nearby values.",
+    "legendTitle": "Heatmap Legend",
+    "legendAlarmCold": "Alarming Cold",
+    "legendWarning": "Warning",
+    "legendAccepted": "Accepted",
+    "legendAlarmHot": "Alarming Hot",
+    "alarmLowLabel": "Alarm Low",
+    "alarmHighLabel": "Alarm High"
   },
   "guide": {
     "title": "Guided Setup",
@@ -113,6 +126,8 @@
     "estimateOutdoor": "Outdoor",
     "estimateTransmission": "Transmission",
     "estimateShade": "Shade",
+    "estimateParModeNote": "Estimation mode calculates DLI in PAR units (mol/m²/day).",
+    "estimateDisclaimer": "Country values are monthly outdoor averages and can vary by local climate, dust, and cloudiness.",
     "selectCountry": "Select your region",
     "selectGreenhouse": "Greenhouse type",
     "selectShading": "Shading level"
@@ -160,15 +175,23 @@
     "hint": "Fetch today's light data, sunrise/sunset, and temperature from the nearest weather station based on your location.",
     "useGps": "Use My GPS Location",
     "searchPlaceholder": "Search city or town...",
+    "searchButton": "Search location",
+    "searching": "Searching...",
     "enterCoords": "Enter coordinates manually",
+    "applyCoords": "Apply coordinates",
     "lat": "Latitude",
     "lng": "Longitude",
+    "toggleLabel": "Toggle automatic location weather",
     "loading": "Fetching weather data...",
     "permissionDenied": "Location permission denied. Please allow location access or search for your city instead.",
     "gpsUnavailable": "GPS is unavailable. Try searching for your city instead.",
+    "networkError": "Network error. Please check your connection and try again.",
+    "fetchFailed": "Failed to fetch weather data for this location.",
     "noResults": "No locations found. Try a different search term.",
     "searchFailed": "Search failed. Please check your internet connection.",
     "invalidCoords": "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180.",
+    "clearConfirm": "Clear current location data?",
+    "useLastKnown": "Use Last Known Location",
     "sunrise": "Rise",
     "sunset": "Set",
     "dliLabel": "DLI",
@@ -182,7 +205,13 @@
     "degrees": "°C",
     "hours": "h",
     "minutes": "min",
+    "loading": "Loading...",
+    "skipToContent": "Skip to main content",
     "poweredBy": "Powered by Geneina Solutions · Based on Plant Empowerment Methodology",
     "language": "Language"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "body": "The page you requested does not exist. Use the navigation above to continue."
   }
 }

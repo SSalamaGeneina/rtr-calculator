@@ -2,7 +2,17 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useRTR } from '../../context/RTRContext'
-import { CROP_PRESETS, GREENHOUSE_TYPES, SHADE_OPTIONS, DLI_ESTIMATES, SLIDER_DLI_PAR, SLIDER_LIGHT_HOURS, SLIDER_LIGHT_MINUTES, SLIDER_TDAY } from '../../lib/constants'
+import {
+  CROP_PRESETS,
+  GREENHOUSE_TYPES,
+  SHADE_OPTIONS,
+  DLI_ESTIMATES,
+  SLIDER_DLI_PAR,
+  SLIDER_LIGHT_HOURS,
+  SLIDER_LIGHT_MINUTES,
+  SLIDER_TDAY,
+  MAX_REALISTIC_T24H,
+} from '../../lib/constants'
 import { calculateT24h, calculateDarkPeriod, calculateNightTemp, getHeatStressLevel, round, formatDarkPeriod, estimateIndoorPAR } from '../../lib/calculations'
 import { SliderInput } from '../shared/SliderInput'
 import { OutputCard } from '../shared/OutputCard'
@@ -15,15 +25,15 @@ function StepExplanation({ text }: { text: string }) {
   )
 }
 
-function LocationBadge({ name, dli, hours, minutes, temp, label }: {
-  name: string; dli: number; hours: number; minutes: number; temp: number; label: string
+function LocationBadge({ name, dli, hours, minutes, temp, label, degreeUnit }: {
+  name: string; dli: number; hours: number; minutes: number; temp: number; label: string; degreeUnit: string
 }) {
   return (
     <div className="flex items-center gap-1.5 mb-3 px-3 py-2 bg-secondary-blue/30 border border-secondary-blue rounded-lg text-xs text-geneina-teal font-medium">
       <span>📍</span>
       <span>{label}</span>
       <span className="text-geneina-teal/40 text-[10px]">
-        {name} · DLI {dli.toFixed(1)} · {hours}h {minutes}m · {temp}°C
+        {name} · DLI {dli.toFixed(1)} · {hours}h {minutes}m · {temp}{degreeUnit}
       </span>
     </div>
   )
@@ -34,6 +44,7 @@ export function GuidedMode() {
   const { state, dispatch } = useRTR()
   const navigate = useNavigate()
   const isAr = i18n.language === 'ar'
+  const degreeUnit = t('common.degrees')
 
   const [step, setStep] = useState(1)
   const [lightMode, setLightMode] = useState<'par' | 'radiation' | 'estimate'>('par')
@@ -74,6 +85,8 @@ export function GuidedMode() {
   const darkPeriod = calculateDarkPeriod(state.lightHours, state.lightMinutes)
   const tNight = calculateNightTemp(t24h, state.tDay, state.lightHours, state.lightMinutes)
   const stressLevel = getHeatStressLevel(t24h, state.acceptedLow, state.acceptedHigh, state.alarmLow, state.alarmHigh)
+  const isDliZero = state.dli <= 0
+  const exceedsRealistic = t24h > MAX_REALISTIC_T24H
 
   const locationBadgeProps = hasLocation ? {
     name: state.location!.name,
@@ -82,6 +95,7 @@ export function GuidedMode() {
     minutes: state.weather!.lightMinutes,
     temp: state.weather!.avgDayTemp,
     label: t('guide.locationPrefilled'),
+    degreeUnit,
   } : null
 
   return (
@@ -117,7 +131,7 @@ export function GuidedMode() {
               >
                 <div className="text-3xl mb-2">{crop.icon}</div>
                 <div className="font-semibold text-sm text-geneina-teal">{isAr ? crop.nameAr : crop.name}</div>
-                <div className="text-[10px] text-geneina-teal/40 mt-1">TBase: {crop.tBase}°C · RTR: {crop.rtr}</div>
+                <div className="text-[10px] text-geneina-teal/40 mt-1">TBase: {crop.tBase}{degreeUnit} · RTR: {crop.rtr}</div>
               </button>
             ))}
           </div>
@@ -216,10 +230,16 @@ export function GuidedMode() {
                   </div>
                 </div>
               )}
+              <p className="text-xs text-geneina-teal/50 leading-relaxed">{t('guide.estimateDisclaimer')}</p>
               <button onClick={applyEstimate} disabled={!estimateCountry} className="px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-all shadow-sm cursor-pointer disabled:opacity-50 border-none">{t('guide.next')}</button>
             </div>
           ) : (
             <div>
+              {lightMode === 'estimate' && (
+                <div className="mb-3 p-3 bg-info/5 border border-info/20 rounded-lg text-xs text-info">
+                  {t('guide.estimateParModeNote')}
+                </div>
+              )}
               <SliderInput
                 label={t('calculator.dli')}
                 tooltip={t('calculator.dliTooltip')}
@@ -261,7 +281,7 @@ export function GuidedMode() {
           <h2 className="text-lg font-medium mb-2">{t('guide.step5')}</h2>
           <StepExplanation text={t('guide.step5Hint')} />
           {hasLocation && <LocationBadge {...locationBadgeProps!} />}
-          <SliderInput label={t('calculator.tDay')} tooltip={t('calculator.tDayTooltip')} value={state.tDay} min={SLIDER_TDAY.min} max={SLIDER_TDAY.max} step={1} unit="°C" decimals={0} onChange={(v) => dispatch({ type: 'SET_TDAY', payload: v })} />
+          <SliderInput label={t('calculator.tDay')} tooltip={t('calculator.tDayTooltip')} value={state.tDay} min={SLIDER_TDAY.min} max={SLIDER_TDAY.max} step={1} unit={degreeUnit} decimals={0} onChange={(v) => dispatch({ type: 'SET_TDAY', payload: v })} />
           <div className="flex gap-2 mt-4">
             <button onClick={() => setStep(4)} className="text-sm text-primary font-medium cursor-pointer bg-transparent border-none">{t('guide.back')}</button>
             <button onClick={() => setStep(6)} className="px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-all shadow-sm cursor-pointer border-none">{t('guide.finish')}</button>
@@ -278,10 +298,10 @@ export function GuidedMode() {
           <div className="space-y-4">
             <OutputCard
               label={t('calculator.t24h')}
-              value={`${t24h.toFixed(1)}°C`}
+              value={`${t24h.toFixed(1)}${degreeUnit}`}
               tooltip={t('calculator.t24hTooltip')}
               stressLevel={stressLevel}
-              subtitle={`${t('calculator.accepted')}: ${state.acceptedLow}–${state.acceptedHigh}°C`}
+              subtitle={`${t('calculator.accepted')}: ${state.acceptedLow}–${state.acceptedHigh}${degreeUnit}`}
             />
             <OutputCard
               label={t('calculator.darkPeriod')}
@@ -290,7 +310,7 @@ export function GuidedMode() {
             />
             <OutputCard
               label={t('calculator.tNight')}
-              value={tNight !== null ? `${round(tNight).toFixed(1)}°C` : '--'}
+              value={tNight !== null ? `${round(tNight).toFixed(1)}${degreeUnit}` : '--'}
               tooltip={t('calculator.tNightTooltip')}
               stressLevel={
                 tNight !== null && state.cropPreset
@@ -300,6 +320,16 @@ export function GuidedMode() {
                   : 'normal'
               }
             />
+            {isDliZero && (
+              <div className="p-3 bg-info/5 border border-info/20 rounded-lg text-sm text-info">
+                {t('calculator.dliZeroInfo')}
+              </div>
+            )}
+            {exceedsRealistic && (
+              <div className="p-3 bg-danger/5 border-2 border-danger/30 rounded-xl text-sm text-danger">
+                {t('calculator.t24hCapWarning', { max: MAX_REALISTIC_T24H })}
+              </div>
+            )}
           </div>
           <div className="flex gap-3 mt-6">
             <button onClick={() => setStep(1)} className="px-4 py-2.5 border-2 border-border rounded-lg text-sm font-medium cursor-pointer bg-white text-geneina-teal hover:border-geneina-teal/30 transition-all">{t('guide.startOver')}</button>

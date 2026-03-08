@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 interface SliderInputProps {
   label: string
@@ -11,12 +11,27 @@ interface SliderInputProps {
   onChange: (value: number) => void
   tooltip?: string
   decimals?: number
+  ariaLabel?: string
 }
 
-export function SliderInput({ label, hint, value, min, max, step, unit, onChange, tooltip, decimals = 1 }: SliderInputProps) {
+export function SliderInput({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  step,
+  unit,
+  onChange,
+  tooltip,
+  decimals = 1,
+  ariaLabel,
+}: SliderInputProps) {
   const [editing, setEditing] = useState(false)
   const [textValue, setTextValue] = useState('')
   const [showTooltip, setShowTooltip] = useState(false)
+  const inputId = useId()
+  const hintId = useId()
 
   const handleTextSubmit = () => {
     const num = parseFloat(textValue)
@@ -31,7 +46,7 @@ export function SliderInput({ label, hint, value, min, max, step, unit, onChange
     <div className="mb-4">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
-          <label className="text-sm font-semibold text-geneina-teal">{label}</label>
+          <label htmlFor={inputId} className="text-sm font-semibold text-geneina-teal">{label}</label>
           {tooltip && (
             <span className="relative">
               <button
@@ -67,22 +82,28 @@ export function SliderInput({ label, hint, value, min, max, step, unit, onChange
           />
         ) : (
           <button
+            type="button"
             onClick={() => { setTextValue(value.toFixed(decimals)); setEditing(true) }}
             className="text-sm font-bold text-primary hover:underline cursor-pointer bg-transparent border-none"
+            title="Click to edit value"
+            aria-label={`${label}: ${value.toFixed(decimals)} ${unit}`.trim()}
           >
             {value.toFixed(decimals)} {unit}
           </button>
         )}
       </div>
-      {hint && <p className="text-xs text-geneina-teal/40 mb-1.5">{hint}</p>}
+      {hint && <p id={hintId} className="text-xs text-geneina-teal/40 mb-1.5">{hint}</p>}
       <input
+        id={inputId}
         type="range"
-        className="w-full h-1.5 rounded-full cursor-pointer"
+        className="w-full h-8 rounded-full cursor-pointer"
         min={min}
         max={max}
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
+        aria-label={ariaLabel ?? label}
+        aria-describedby={hint ? hintId : undefined}
       />
       <div className="flex justify-between text-[10px] text-geneina-teal/30 mt-0.5">
         <span>{min}</span>

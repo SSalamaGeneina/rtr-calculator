@@ -9,6 +9,7 @@ export function ConfigPanel() {
   const { t, i18n } = useTranslation()
   const { state, dispatch } = useRTR()
   const isAr = i18n.language === 'ar'
+  const degreeUnit = t('common.degrees')
 
   const cropName = state.cropPreset
     ? isAr ? state.cropPreset.nameAr : state.cropPreset.name
@@ -57,7 +58,7 @@ export function ConfigPanel() {
         min={SLIDER_TBASE.min}
         max={SLIDER_TBASE.max}
         step={SLIDER_TBASE.step}
-        unit="°C"
+        unit={degreeUnit}
         decimals={0}
         onChange={(v) => dispatch({ type: 'SET_TBASE', payload: v })}
       />
@@ -102,7 +103,7 @@ export function ConfigPanel() {
           </div>
           <div className="flex justify-between">
             <span className="text-geneina-teal/50">TBase</span>
-            <span className="font-medium">{state.cropPreset.tBase}°C {tBaseChanged ? `→ ${state.tBase}°C` : ''}</span>
+            <span className="font-medium">{state.cropPreset.tBase}{degreeUnit} {tBaseChanged ? `→ ${state.tBase}${degreeUnit}` : ''}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-geneina-teal/50">RTR</span>
@@ -110,14 +111,22 @@ export function ConfigPanel() {
           </div>
           <div className="flex justify-between">
             <span className="text-geneina-teal/50">{t('calculator.accepted')}</span>
-            <span className="font-medium">{state.cropPreset.acceptedLow}–{state.cropPreset.acceptedHigh}°C</span>
+            <span className="font-medium">{state.cropPreset.acceptedLow}–{state.cropPreset.acceptedHigh}{degreeUnit}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-geneina-teal/50">{t('crops.nightTempRange')}</span>
-            <span className="font-medium">{state.cropPreset.nightTempMin}–{state.cropPreset.nightTempMax}°C</span>
+            <span className="font-medium">{state.cropPreset.nightTempMin}–{state.cropPreset.nightTempMax}{degreeUnit}</span>
           </div>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'RESET_ALL' })}
+        className="mt-5 w-full px-4 py-2.5 rounded-lg border-2 border-danger/30 text-danger text-sm font-semibold hover:bg-danger/5 transition-colors cursor-pointer bg-white"
+      >
+        {t('config.resetAll')}
+      </button>
 
       <div className="mt-6 pt-4 border-t border-border flex flex-col items-center gap-2">
         <img src={geneinaIcon} alt="Geneina" className="h-5 w-auto opacity-25" />

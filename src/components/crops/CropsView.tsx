@@ -8,6 +8,7 @@ export function CropsView() {
   const { dispatch } = useRTR()
   const navigate = useNavigate()
   const isAr = i18n.language === 'ar'
+  const degreeUnit = t('common.degrees')
 
   const applyProfile = (cropId: string) => {
     const preset = CROP_PRESETS.find((c) => c.id === cropId)!
@@ -31,7 +32,7 @@ export function CropsView() {
             <div className="p-4 space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-geneina-teal/50">{t('crops.recommendedTBase')}</span>
-                <span className="font-semibold text-geneina-teal">{crop.tBase}&deg;C</span>
+                <span className="font-semibold text-geneina-teal">{crop.tBase}{degreeUnit}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-geneina-teal/50">{t('crops.recommendedRtr')}</span>
@@ -39,11 +40,11 @@ export function CropsView() {
               </div>
               <div className="flex justify-between">
                 <span className="text-geneina-teal/50">{t('crops.tempRange')}</span>
-                <span className="font-semibold text-geneina-teal">{crop.acceptedLow}–{crop.acceptedHigh}&deg;C</span>
+                <span className="font-semibold text-geneina-teal">{crop.acceptedLow}–{crop.acceptedHigh}{degreeUnit}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-geneina-teal/50">{t('crops.nightTempRange')}</span>
-                <span className="font-semibold text-geneina-teal">{crop.nightTempMin}–{crop.nightTempMax}&deg;C</span>
+                <span className="font-semibold text-geneina-teal">{crop.nightTempMin}–{crop.nightTempMax}{degreeUnit}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-geneina-teal/50">{t('crops.season')}</span>

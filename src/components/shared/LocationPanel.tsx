@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useRTR } from '../../context/RTRContext'
 import {
@@ -13,6 +13,7 @@ type LocationMode = 'idle' | 'loading' | 'done' | 'error'
 export function LocationPanel() {
   const { t } = useTranslation()
   const { state, dispatch } = useRTR()
+  const degreeUnit = t('common.degrees')
 
   const [mode, setMode] = useState<LocationMode>(state.locationEnabled ? 'done' : 'idle')
   const [error, setError] = useState('')
@@ -22,6 +23,12 @@ export function LocationPanel() {
   const [showManual, setShowManual] = useState(false)
   const [manualLat, setManualLat] = useState('')
   const [manualLng, setManualLng] = useState('')
+  const hasStoredLocation = !state.locationEnabled && state.location !== null && state.weather !== null
+
+  const getLocationErrorMessage = useCallback((errorValue: unknown) => {
+    if (errorValue instanceof TypeError) return t('location.networkError')
+    return errorValue instanceof Error ? errorValue.message : t('location.fetchFailed')
+  }, [t])
 
   const applyLocation = useCallback(async (lat: number, lng: number) => {
     setMode('loading')
@@ -33,10 +40,10 @@ export function LocationPanel() {
       setSearchResults([])
       setSearchQuery('')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to fetch weather data')
+      setError(getLocationErrorMessage(e))
       setMode('error')
     }
-  }, [dispatch])
+  }, [dispatch, getLocationErrorMessage])
 
   const handleGps = useCallback(async () => {
     setMode('loading')
@@ -47,18 +54,18 @@ export function LocationPanel() {
     } catch (e) {
       const msg = e instanceof GeolocationPositionError
         ? e.code === 1 ? t('location.permissionDenied') : t('location.gpsUnavailable')
-        : (e instanceof Error ? e.message : 'GPS error')
+        : getLocationErrorMessage(e)
       setError(msg)
       setMode('error')
     }
-  }, [applyLocation, t])
+  }, [applyLocation, getLocationErrorMessage, t])
 
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) return
+  const runSearch = useCallback(async (query: string) => {
+    if (!query) return
     setSearching(true)
     setError('')
     try {
-      const results = await geocodeCity(searchQuery.trim())
+      const results = await geocodeCity(query)
       if (results.length === 0) {
         setError(t('location.noResults'))
       }
@@ -68,7 +75,27 @@ export function LocationPanel() {
     } finally {
       setSearching(false)
     }
-  }, [searchQuery, t])
+  }, [t])
+
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (query.length < 2) {
+      setSearchResults([])
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      void runSearch(query)
+    }, 300)
+
+    return () => clearTimeout(timeout)
+  }, [runSearch, searchQuery])
+
+  const handleSearch = useCallback(() => {
+    const query = searchQuery.trim()
+    if (query.length < 2) return
+    void runSearch(query)
+  }, [runSearch, searchQuery])
 
   const handleManualApply = useCallback(() => {
     const lat = parseFloat(manualLat)
@@ -81,13 +108,14 @@ export function LocationPanel() {
   }, [manualLat, manualLng, applyLocation, t])
 
   const handleClear = useCallback(() => {
+    if (!window.confirm(t('location.clearConfirm'))) return
     dispatch({ type: 'CLEAR_LOCATION' })
     setMode('idle')
     setError('')
     setSearchResults([])
     setSearchQuery('')
     setShowManual(false)
-  }, [dispatch])
+  }, [dispatch, t])
 
   const formatTime = (iso: string) => {
     try {
@@ -105,6 +133,7 @@ export function LocationPanel() {
           type="button"
           role="switch"
           aria-checked={state.locationEnabled}
+          aria-label={t('location.toggleLabel')}
           onClick={state.locationEnabled ? handleClear : handleGps}
           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer border-none ${
             state.locationEnabled ? 'bg-primary' : 'bg-geneina-teal/20'
@@ -131,7 +160,18 @@ export function LocationPanel() {
       {/* Idle state: show GPS + search + manual options */}
       {(mode === 'idle' || mode === 'error') && !state.locationEnabled && (
         <div className="space-y-2">
+          {hasStoredLocation && (
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'RESTORE_LAST_LOCATION' })}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-secondary-blue/40 text-geneina-teal rounded-lg text-xs font-semibold hover:bg-secondary-blue/50 transition-all cursor-pointer border border-secondary-blue"
+            >
+              ↺ {t('location.useLastKnown')}
+            </button>
+          )}
+
           <button
+            type="button"
             onClick={handleGps}
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary-dark transition-all shadow-sm cursor-pointer border-none"
           >
@@ -147,13 +187,16 @@ export function LocationPanel() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="flex-1 border-2 border-border rounded-lg px-2.5 py-1.5 text-xs bg-white focus:border-primary focus:outline-none transition-colors"
+              aria-label={t('location.searchPlaceholder')}
             />
             <button
+              type="button"
               onClick={handleSearch}
-              disabled={searching || !searchQuery.trim()}
+              disabled={searching || searchQuery.trim().length < 2}
               className="px-3 py-1.5 bg-geneina-teal/10 text-geneina-teal rounded-lg text-xs font-semibold cursor-pointer border-none disabled:opacity-50 hover:bg-geneina-teal/15 transition-colors"
+              aria-label={t('location.searchButton')}
             >
-              {searching ? '...' : '🔍'}
+              {searching ? t('location.searching') : '🔍'}
             </button>
           </div>
 
@@ -161,6 +204,7 @@ export function LocationPanel() {
             <div className="border-2 border-border rounded-lg overflow-hidden">
               {searchResults.map((r, i) => (
                 <button
+                  type="button"
                   key={i}
                   onClick={() => applyLocation(r.latitude, r.longitude)}
                   className="w-full text-start px-3 py-2 text-xs hover:bg-secondary-blue/20 transition-colors cursor-pointer border-none bg-white border-b border-border last:border-b-0"
@@ -173,6 +217,7 @@ export function LocationPanel() {
           )}
 
           <button
+            type="button"
             onClick={() => setShowManual(!showManual)}
             className="text-[10px] text-primary font-medium underline cursor-pointer bg-transparent border-none"
           >
@@ -190,8 +235,10 @@ export function LocationPanel() {
                   max={90}
                   value={manualLat}
                   onChange={(e) => setManualLat(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleManualApply()}
                   placeholder="25.2"
                   className="w-full border-2 border-border rounded-lg px-2 py-1 text-xs bg-white focus:border-primary focus:outline-none transition-colors"
+                  aria-label={t('location.lat')}
                 />
               </div>
               <div className="flex-1">
@@ -203,13 +250,17 @@ export function LocationPanel() {
                   max={180}
                   value={manualLng}
                   onChange={(e) => setManualLng(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleManualApply()}
                   placeholder="55.3"
                   className="w-full border-2 border-border rounded-lg px-2 py-1 text-xs bg-white focus:border-primary focus:outline-none transition-colors"
+                  aria-label={t('location.lng')}
                 />
               </div>
               <button
+                type="button"
                 onClick={handleManualApply}
                 className="px-3 py-1 bg-primary text-white rounded-lg text-xs cursor-pointer border-none font-bold"
+                aria-label={t('location.applyCoords')}
               >
                 ✓
               </button>
@@ -228,6 +279,7 @@ export function LocationPanel() {
                 {state.location.name}
               </div>
               <button
+                type="button"
                 onClick={handleClear}
                 className="text-[10px] text-geneina-teal/30 hover:text-danger cursor-pointer bg-transparent border-none transition-colors"
                 aria-label="Clear location"
@@ -257,16 +309,17 @@ export function LocationPanel() {
               </div>
               <div className="flex justify-between">
                 <span className="text-geneina-teal/50">{t('location.tempHigh')}</span>
-                <span className="font-medium">{state.weather.tempMax}°C</span>
+                <span className="font-medium">{state.weather.tempMax}{degreeUnit}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-geneina-teal/50">{t('location.tempLow')}</span>
-                <span className="font-medium">{state.weather.tempMin}°C</span>
+                <span className="font-medium">{state.weather.tempMin}{degreeUnit}</span>
               </div>
             </div>
           </div>
           <p className="text-[10px] text-geneina-teal/30 leading-snug">{t('location.dataSource')}</p>
           <button
+            type="button"
             onClick={() => applyLocation(state.location!.latitude, state.location!.longitude)}
             className="w-full text-[10px] text-primary font-medium underline cursor-pointer bg-transparent border-none"
           >

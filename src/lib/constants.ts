@@ -369,3 +369,23 @@ export const HEATMAP_DLI_RADIATION_RANGE = { min: 0, max: 3000, step: 200 }
 
 export const DEFAULT_ACCEPTED_RANGE = { low: 18, high: 28 }
 export const DEFAULT_ALARM_RANGE = { low: 14, high: 35 }
+
+// --- Safety and UX thresholds ---
+
+/**
+ * Absolute hard cap shown as a science sanity check.
+ * Values above this are mathematically possible with extreme inputs,
+ * but not realistic greenhouse setpoints.
+ */
+export const MAX_REALISTIC_T24H = 55
+
+/** Manual/night temperature sanity thresholds for warnings */
+export const NIGHT_TEMP_HARD_MIN = 0
+export const NIGHT_TEMP_HARD_MAX = 50
+
+/** Effective RTR deviation bands versus crop preset recommendation */
+export const RTR_DEVIATION_ACCEPTED = 0.5
+export const RTR_DEVIATION_WARNING = 1.5
+
+/** localStorage key for persisted calculator state */
+export const RTR_STORAGE_KEY = 'rtr-calculator-state-v1'

@@ -33,6 +33,7 @@ export function NavBar({ onToggleSidebar }: NavBarProps) {
       <div className="flex items-center gap-2 md:gap-3">
         {onToggleSidebar && (
           <button
+            type="button"
             onClick={onToggleSidebar}
             className="lg:hidden p-1.5 hover:bg-white/10 rounded-lg cursor-pointer bg-transparent text-white border-none text-lg"
             aria-label="Toggle settings"
@@ -53,6 +54,7 @@ export function NavBar({ onToggleSidebar }: NavBarProps) {
           <Link
             key={item.path}
             to={item.path}
+            aria-current={location.pathname === item.path ? 'page' : undefined}
             className={`px-2.5 md:px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
               location.pathname === item.path
                 ? 'bg-white/15 shadow-sm'
@@ -64,8 +66,10 @@ export function NavBar({ onToggleSidebar }: NavBarProps) {
           </Link>
         ))}
         <button
+          type="button"
           onClick={toggleLanguage}
           className="ml-1 md:ml-3 px-2.5 md:px-3 py-1.5 rounded-lg border border-white/25 text-xs md:text-sm font-medium hover:bg-white/10 transition-all cursor-pointer bg-transparent text-white"
+          aria-label={t('common.language')}
         >
           {i18n.language === 'en' ? 'عربي' : 'EN'}
         </button>

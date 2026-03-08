@@ -20,6 +20,11 @@ import {
   SLIDER_LIGHT_HOURS,
   SLIDER_LIGHT_MINUTES,
   SLIDER_TDAY,
+  MAX_REALISTIC_T24H,
+  NIGHT_TEMP_HARD_MAX,
+  NIGHT_TEMP_HARD_MIN,
+  RTR_DEVIATION_ACCEPTED,
+  RTR_DEVIATION_WARNING,
 } from '../../lib/constants'
 
 type CalcMode = 'forward' | 'reverse'
@@ -28,19 +33,21 @@ export function CalculatorView() {
   const { t } = useTranslation()
   const { state, dispatch } = useRTR()
   const [calcMode, setCalcMode] = useState<CalcMode>('forward')
-  const [nightTemp, setNightTemp] = useState(18)
 
   const dliSlider = state.dliMode === 'par' ? SLIDER_DLI_PAR : SLIDER_DLI_RADIATION
   const darkPeriod = calculateDarkPeriod(state.lightHours, state.lightMinutes)
+  const degreeUnit = t('common.degrees')
 
   const fwdT24h = round(calculateT24h(state.tBase, state.rtr, state.dli, state.dliMode))
   const fwdTNight = calculateNightTemp(fwdT24h, state.tDay, state.lightHours, state.lightMinutes)
 
-  const revT24h = round(calculateT24hFromTemps(state.tDay, nightTemp, state.lightHours, state.lightMinutes))
+  const revT24h = round(calculateT24hFromTemps(state.tDay, state.nightTemp, state.lightHours, state.lightMinutes))
   const revRtr = calculateRTR(revT24h, state.tBase, state.dli, state.dliMode)
 
   const isForward = calcMode === 'forward'
   const activeT24h = isForward ? fwdT24h : revT24h
+  const isDliZero = state.dli <= 0
+  const exceedsRealistic = activeT24h > MAX_REALISTIC_T24H
 
   const stressLevel = getHeatStressLevel(
     activeT24h,
@@ -53,7 +60,7 @@ export function CalculatorView() {
   const nightWarning = isForward
     ? fwdTNight === null
       ? t('calculator.noNight')
-      : fwdTNight < 0 || fwdTNight > 50
+      : fwdTNight < NIGHT_TEMP_HARD_MIN || fwdTNight > NIGHT_TEMP_HARD_MAX
         ? t('calculator.impossibleNight')
         : undefined
     : undefined
@@ -164,7 +171,7 @@ export function CalculatorView() {
             min={SLIDER_TDAY.min}
             max={SLIDER_TDAY.max}
             step={SLIDER_TDAY.step}
-            unit="°C"
+            unit={degreeUnit}
             decimals={0}
             onChange={(v) => dispatch({ type: 'SET_TDAY', payload: v })}
           />
@@ -174,13 +181,13 @@ export function CalculatorView() {
               label={t('calculator.tNightInput')}
               hint={t('calculator.tNightInputHint')}
               tooltip={t('calculator.tNightTooltip')}
-              value={nightTemp}
+              value={state.nightTemp}
               min={0}
               max={40}
               step={1}
-              unit="°C"
+              unit={degreeUnit}
               decimals={0}
-              onChange={setNightTemp}
+              onChange={(v) => dispatch({ type: 'SET_NIGHT_TEMP', payload: v })}
             />
           )}
         </div>
@@ -191,10 +198,10 @@ export function CalculatorView() {
             <>
               <OutputCard
                 label={t('calculator.t24h')}
-                value={`${fwdT24h.toFixed(1)}°C`}
+                value={`${fwdT24h.toFixed(1)}${degreeUnit}`}
                 tooltip={t('calculator.t24hTooltip')}
                 stressLevel={stressLevel}
-                subtitle={`${t('calculator.accepted')}: ${state.acceptedLow}–${state.acceptedHigh}°C`}
+                subtitle={`${t('calculator.accepted')}: ${state.acceptedLow}–${state.acceptedHigh}${degreeUnit}`}
               />
 
               <OutputCard
@@ -205,7 +212,7 @@ export function CalculatorView() {
 
               <OutputCard
                 label={t('calculator.tNight')}
-                value={fwdTNight !== null ? `${round(fwdTNight).toFixed(1)}°C` : '--'}
+                value={fwdTNight !== null ? `${round(fwdTNight).toFixed(1)}${degreeUnit}` : '--'}
                 tooltip={t('calculator.tNightTooltip')}
                 warning={nightWarning}
                 stressLevel={
@@ -225,9 +232,9 @@ export function CalculatorView() {
                 tooltip={t('calculator.effectiveRtrTooltip')}
                 stressLevel={
                   revRtr !== null && state.cropPreset
-                    ? Math.abs(revRtr - state.cropPreset.rtr) <= 0.5
+                    ? Math.abs(revRtr - state.cropPreset.rtr) <= RTR_DEVIATION_ACCEPTED
                       ? 'accepted'
-                      : Math.abs(revRtr - state.cropPreset.rtr) <= 1.5
+                      : Math.abs(revRtr - state.cropPreset.rtr) <= RTR_DEVIATION_WARNING
                         ? 'warning'
                         : 'alarming'
                     : 'normal'
@@ -237,10 +244,10 @@ export function CalculatorView() {
 
               <OutputCard
                 label={t('calculator.calculatedT24h')}
-                value={`${revT24h.toFixed(1)}°C`}
+                value={`${revT24h.toFixed(1)}${degreeUnit}`}
                 tooltip={t('calculator.calculatedT24hTooltip')}
                 stressLevel={stressLevel}
-                subtitle={`${t('calculator.accepted')}: ${state.acceptedLow}–${state.acceptedHigh}°C`}
+                subtitle={`${t('calculator.accepted')}: ${state.acceptedLow}–${state.acceptedHigh}${degreeUnit}`}
               />
 
               <OutputCard
@@ -249,6 +256,24 @@ export function CalculatorView() {
                 tooltip={t('calculator.darkPeriodTooltip')}
               />
             </>
+          )}
+
+          {isDliZero && (
+            <div className="p-3 bg-info/5 border-2 border-info/20 rounded-xl text-sm text-info">
+              {t('calculator.dliZeroInfo')}
+            </div>
+          )}
+
+          {!isForward && isDliZero && revRtr === null && (
+            <div className="p-3 bg-warning/5 border-2 border-warning/30 rounded-xl text-sm text-warning">
+              {t('calculator.reverseRtrUnavailable')}
+            </div>
+          )}
+
+          {exceedsRealistic && (
+            <div className="p-3 bg-danger/5 border-2 border-danger/30 rounded-xl text-sm text-danger">
+              {t('calculator.t24hCapWarning', { max: MAX_REALISTIC_T24H })}
+            </div>
           )}
 
           {stressLevel === 'warning' && (
